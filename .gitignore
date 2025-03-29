@@ -1,0 +1,50 @@
+# Python bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+
+# Virtual environments
+ga_env/
+venv/
+ENV/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# IDE specific files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Project specific
+results/
+plots/
+*.log
+*.csv
+*.xlsx
+*.txt
+
+# Keep original case study data files
+!case_studies/*.csv
+!case_studies/*.txt
+!case_studies/*.xlsx
+
+# Windows specific
+Thumbs.db
+Desktop.ini
+
+# macOS specific
+.DS_Store
+
+# Temporary files
+temp/
+*.tmp
+
+*.pdf
+.dropbox
