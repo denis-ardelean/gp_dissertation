@@ -8,7 +8,7 @@ class ResultsAnalyzer:
     def __init__(self, results_dir="results"):
         self.results_dir = results_dir
         self.case_studies = [d for d in os.listdir(results_dir) 
-                           if os.path.isdir(os.path.join(results_dir, d))]
+        if os.path.isdir(os.path.join(results_dir, d))]
         
         # Create output directory for comparison results
         self.comparison_dir = os.path.join("plots", "comparisons")
@@ -33,32 +33,49 @@ class ResultsAnalyzer:
         """Compare convergence rates across case studies"""
         plt.figure(figsize=(12, 8))
         
-        for case_study in self.case_studies:
-            # Get best parameter configuration for this case study
-            param_results = pd.read_csv(os.path.join(self.results_dir, case_study, "parameter_sweep_results.csv"))
-            
-            # Find configuration with best fitness (assuming lower is better, use idxmax for maximization)
-            best_config_idx = param_results['best_fitness'].idxmin()
-            best_config = param_results.loc[best_config_idx]
-            
-            # Find corresponding stats file
-            config_name = f"pop{int(best_config['population_size'])}_gen50_cxpb{best_config['crossover_prob']}_mutpb{best_config['mutation_prob']}"
-            stats_file = os.path.join(self.results_dir, case_study, f"stats_{config_name}.csv")
-            
-            if os.path.exists(stats_file):
-                stats = pd.read_csv(stats_file)
-                
-                # Plot convergence
-                plt.plot(stats['generation'], stats['best_fitness'] if 'best_fitness' in stats else stats['max_fitness'],
-                         label=f"{case_study}")
+        has_valid_data = False
         
-        plt.xlabel("Generation")
-        plt.ylabel("Best Fitness")
-        plt.title("Convergence Comparison Across Case Studies")
-        plt.legend()
-        plt.grid(True)
-        plt.savefig(os.path.join(self.comparison_dir, "convergence_comparison.png"))
-        plt.close()
+        for case_study in self.case_studies:
+            param_results_path = os.path.join(self.results_dir, case_study, "parameter_sweep_results.csv")
+            
+            if not os.path.exists(param_results_path):
+                print(f"Warning: No parameter sweep results found for {case_study}")
+                continue
+                
+            try:
+                # Get best parameter configuration for this case study
+                param_results = pd.read_csv(param_results_path)
+                
+                # Find configuration with best fitness (assuming lower is better, use idxmax for maximization)
+                best_config_idx = param_results['best_fitness'].idxmin()
+                best_config = param_results.loc[best_config_idx]
+                
+                # Find corresponding stats file
+                config_name = f"pop{int(best_config['population_size'])}_gen50_cxpb{best_config['crossover_prob']}_mutpb{best_config['mutation_prob']}"
+                stats_file = os.path.join(self.results_dir, case_study, f"stats_{config_name}.csv")
+                
+                if os.path.exists(stats_file):
+                    stats = pd.read_csv(stats_file)
+                    
+                    # Plot convergence
+                    plt.plot(stats['generation'], stats['best_fitness'] if 'best_fitness' in stats else stats['max_fitness'],
+                            label=f"{case_study}")
+                    has_valid_data = True
+                else:
+                    print(f"Warning: Stats file not found for {case_study}")
+            except Exception as e:
+                print(f"Error processing {case_study}: {e}")
+        
+        if has_valid_data:
+            plt.xlabel("Generation")
+            plt.ylabel("Best Fitness")
+            plt.title("Convergence Comparison Across Case Studies")
+            plt.legend()
+            plt.grid(True)
+            plt.savefig(os.path.join(self.comparison_dir, "convergence_comparison.png"))
+            plt.close()
+        else:
+            print("No valid data for convergence plot")
     
     def compare_parameter_sensitivity(self):
         """Compare parameter sensitivity across case studies"""

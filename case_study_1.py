@@ -10,21 +10,53 @@ CASE_STUDY = "CaseStudy1"
 data_processor = DataProcessor("case_studies")
 
 # 3. Load and process data 
-data = data_processor.load_case_study_data("case_study_1.csv")  # Replace with your actual file
-data = data_processor.preprocess_data(data)
+data = data_processor.load_case_study_data("Argo1.csv")
+# Extract only numeric columns and exclude the first column (Name)
+numeric_data = data.select_dtypes(include=['number'])
+data_processed = numeric_data.drop(['BUGS'], axis=1, errors='ignore')  # Remove target variable from features
 
 # 4. Define problem parameters based on case study
-N_VARIABLES = 10  # Adjust based on your case study
-VARIABLE_BOUNDS = (-5, 5)  # Adjust based on your case study
+N_VARIABLES = data_processed.shape[1]  # Number of numeric features
+# Binary representation (0 = exclude feature, 1 = include feature)
+VARIABLE_BOUNDS = (0, 1)  
 
 # 5. Define the fitness function
 def fitness_function(individual):
     """
-    Fitness function for Case Study 1
-    Change this to match the objectives of your specific case study
+    Fitness function for software bug prediction case study.
+    Uses selected features (based on genetic algorithm) to predict bugs.
+    
+    The individual is an array of binary values indicating which features to use.
     """
-    # Example: optimize a mathematical function
-    return sum([x**2 for x in individual]),  # Note the comma to return a tuple
+    # Select features based on the individual's genes (1 = include feature, 0 = exclude)
+    selected_indices = [i for i, gene in enumerate(individual) if gene > 0.5]
+    
+    if not selected_indices:  # Ensure at least one feature is selected
+        return (float('inf'),)  # Return a poor fitness score
+        
+    feature_names = data_processed.columns[selected_indices]
+        
+    # Extract selected features from your dataset
+    X = data_processed[feature_names]  # Selected features
+    y = numeric_data['BUGS']  # Target variable
+    
+    # Simple train/test split
+    from sklearn.model_selection import train_test_split
+    from sklearn.linear_model import LinearRegression
+    from sklearn.metrics import mean_squared_error
+    
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+    
+    # Train a model
+    model = LinearRegression()
+    model.fit(X_train, y_train)
+    
+    # Predict and evaluate
+    y_pred = model.predict(X_test)
+    mse = mean_squared_error(y_test, y_pred)
+    
+    # Return error (to be minimized)
+    return (mse,)  # Note the comma to return a tuple
 
 # 6. Initialize Genetic Algorithm
 ga = GeneticAlgorithm(CASE_STUDY, is_maximization=False)  # False for minimization
@@ -35,7 +67,7 @@ ga.setup_ga(
     n_vars=N_VARIABLES,
     var_bounds=VARIABLE_BOUNDS,
     mutation_sigma=0.5,
-    mutation_prob=0.1,
+    mutation_prob=0.2,
     crossover_alpha=0.5
 )
 

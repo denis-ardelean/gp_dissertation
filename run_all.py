@@ -9,7 +9,7 @@ def run_case_studies():
     """Run all case study scripts in the project"""
     # Find all case study scripts
     case_study_files = [f for f in os.listdir(".") 
-                       if f.startswith("case_study_") and f.endswith(".py")]
+    if f.startswith("case_study_") and f.endswith(".py")]
     
     if not case_study_files:
         print("No case study scripts found!")
@@ -42,6 +42,29 @@ def run_comparative_analysis():
     print(f"\n{'='*60}")
     print("Running comparative analysis...")
     print(f"{'='*60}")
+    
+    # Check if results directory exists and has content
+    if not os.path.exists("results"):
+        print("No results directory found. Skipping comparative analysis.")
+        return None
+        
+    case_studies = [d for d in os.listdir("results") 
+    if os.path.isdir(os.path.join("results", d))]
+    
+    if not case_studies:
+        print("No case study results found. Skipping comparative analysis.")
+        return None
+        
+    # Check if at least one case study has parameter_sweep_results.csv
+    has_results = False
+    for case_study in case_studies:
+        if os.path.exists(os.path.join("results", case_study, "parameter_sweep_results.csv")):
+            has_results = True
+            break
+            
+    if not has_results:
+        print("No parameter sweep results found. Skipping comparative analysis.")
+        return None
     
     analyzer = ResultsAnalyzer()
     best_configs = analyzer.run_all_analyses()
